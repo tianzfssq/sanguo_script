@@ -2,9 +2,9 @@
 
 流程（参考已调通的自动打竞技场）：
 1. 进入工会界面（等待界面就绪）
-2. 点击工会 Boss 按键（guild.boss / guild_boss.png）打开挑战面板（仅第一次）
+2. 点击工会 Boss 按键（guild.boss / g_工会boss.png）打开挑战面板（仅第一次）
 3. 循环 rounds 次（默认 2 次）：
-   - 检测挑战按键（guild.challenge1 / challenge_1.png）并点击进入 Boss 战斗；
+   - 检测挑战按键（guild.challenge1 / t_挑战1.png）并点击进入 Boss 战斗；
      未检测到时点击屏幕下方关闭可能的弹窗后重试，最多连续检测 3 次
    - 等待进入战斗（离开工会界面）
    - 等待战斗结束（结算自动点击底部退出）→ 回到挑战面板

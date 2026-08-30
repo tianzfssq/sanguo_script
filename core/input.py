@@ -54,20 +54,31 @@ class InputController:
         self.click(left + x, top + y)
         return True
 
-    def press_key(self, key: str, duration: float = 0.0) -> None:
+    def press_key(self, key: str, duration: float = 0.0, stop_event=None) -> None:
         """短按或长按按键。duration > 0 时为长按。
 
         短按时按住 50ms 再松开：立即按下松开（pynput tap）会被
         Chromium WebView 忽略，游戏不响应（参考 keyboard-simulation-lessons.md）。
+
+        全局规则：停止任务时必须先松开已按下的按键。
+        - 长按期间按 0.1s 分片睡眠并检查 stop_event，收到停止信号立即松开，
+          避免停止后角色仍持续移动（挂机 A/D、钓鱼 A/W）；
+        - release 放在 finally 中，中途异常也不会残留按下状态。
         """
         key = _SPECIAL_KEYS.get(key, key)
-        if duration > 0:
-            self._keyboard.press(key)
-            time.sleep(duration)
-            self._keyboard.release(key)
-        else:
-            self._keyboard.press(key)
-            time.sleep(0.05)
+        self._keyboard.press(key)
+        try:
+            if duration > 0:
+                remaining = duration
+                while remaining > 0:
+                    if stop_event is not None and stop_event.is_set():
+                        break
+                    step = min(0.1, remaining)
+                    time.sleep(step)
+                    remaining -= step
+            else:
+                time.sleep(0.05)
+        finally:
             self._keyboard.release(key)
 
     def move_and_click(self, x: int, y: int, duration: float = 0.3) -> None:

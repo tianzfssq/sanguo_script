@@ -5,9 +5,22 @@ from __future__ import annotations
 import threading
 import time
 
+from pynput import keyboard as pynput_keyboard
+
 from modules.base import get_module
 from orchestrator.context import Context
 from orchestrator.logger import Logger
+
+# 停止热键 `~`（与 ` 同一物理键），US 布局虚拟键码 192，兼容中文输入法
+_STOP_HOTKEY_VK = 192
+
+
+def _is_stop_hotkey(key) -> bool:
+    """判断按键是否为停止热键 `~`（char 或 vk 兜底）。"""
+    ch = getattr(key, "char", None)
+    if ch in ("`", "~"):
+        return True
+    return getattr(key, "vk", None) == _STOP_HOTKEY_VK
 
 
 class TaskRunner:
@@ -17,6 +30,7 @@ class TaskRunner:
         self._thread: threading.Thread | None = None
         self._current: str | None = None
         self._lock = threading.Lock()
+        self._hotkey_listener: pynput_keyboard.Listener | None = None
 
     def start(self, module_key: str) -> bool:
         """启动指定模块任务（独立线程）。已有任务运行时拒绝。"""
@@ -40,6 +54,7 @@ class TaskRunner:
                 target=self._run, args=(mod_cls,), daemon=True, name=f"task-{module_key}"
             )
             self._thread.start()
+            self._start_stop_hotkey()
             self._logger.info(f"任务启动: {mod_cls.name}")
             return True
 
@@ -50,8 +65,30 @@ class TaskRunner:
         except Exception as exc:
             self._logger.error(f"任务异常终止 [{mod_cls.name}]: {exc}")
         finally:
+            self._stop_hotkey_listener()
             with self._lock:
                 self._current = None
+
+    # ---------- 停止热键（`~`）----------
+
+    def _start_stop_hotkey(self) -> None:
+        """任务运行期间开启全局停止热键监听（按 `~` 触发停止任务）。"""
+        if self._hotkey_listener is not None:
+            return
+
+        def on_press(key) -> None:
+            if _is_stop_hotkey(key):
+                self._logger.info("收到停止热键 `~`")
+                self.stop_current()
+
+        self._hotkey_listener = pynput_keyboard.Listener(on_press=on_press)
+        self._hotkey_listener.start()
+
+    def _stop_hotkey_listener(self) -> None:
+        """任务结束后关闭停止热键监听。"""
+        if self._hotkey_listener is not None:
+            self._hotkey_listener.stop()
+            self._hotkey_listener = None
 
     def stop_current(self) -> None:
         """向当前任务发送停止信号（优雅停止，由模块内循环响应）。"""

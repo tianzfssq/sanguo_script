@@ -1,43 +1,41 @@
 # 场景与界面元素定义（扩展点）
 # - 每个 [scene.xxx.elements.yyy] 定义界面上一个可识别按钮/图标
 # - template 文件名相对 templates/ 目录
+# - 模板命名规范：拼音首字母_中文名.png（如 c_吃.png、z_主界面营地.png）
 # - 模板缺失时程序会跳过该元素，不影响运行
 # - 新增元素：加一段配置 + 在 templates/ 放模板图即可
 # - 新增导航路径：在 [nav.paths] 里配置"场景.元素"序列
 
 # ============ 主界面 ============
-# 判定规则：同时找到 特惠+营地 图标，且没有竞技场二级菜单
-# 营地图标有两种外观（main_camp / main_camp_1），命中任一即算营地
+# 判定规则：同时找到 领地+营地 图标（右侧固定按钮栏，模板裁剪紧不含背景，
+# 不受角色移动后地图背景变化影响；特惠图标因模板带背景已弃用）
+# 营地图标有两种外观（z_主界面营地 / z_主界面营地1），命中任一即算营地
 [scene.main]
 fallback = true                                # 主界面最后判定（兜底场景）
-required = ["special", "camp"]                 # 必须全部命中
+required = ["territory", "camp"]               # 必须全部命中
 forbidden = ["camp_menu.arena_entry"]          # 命中任一则不算主界面
 
-[scene.main.elements.special]
-template = "特惠.png"
+[scene.main.elements.territory]
+template = "z_主界面领地.png"
 confidence = 0.82
 
 [scene.main.elements.camp]
-template = "main_camp.png"
-alt_templates = ["main_camp_1.png"]            # 营地图标备选外观，命中任一即算营地
-confidence = 0.82
-
-[scene.main.elements.territory]
-template = "main_territory.png"
+template = "z_主界面营地.png"
+alt_templates = ["z_主界面营地1.png"]           # 营地图标备选外观，命中任一即算营地
 confidence = 0.82
 
 [scene.main.elements.guild]
-template = "main_guild.png"
+template = "z_主界面工会.png"
 confidence = 0.82
 
 [scene.main.elements.eat]
-template = "eat.png"
+template = "c_吃.png"
 confidence = 0.8
 
 # ============ 营地二级菜单（点营地后弹出的弹窗） ============
 [scene.camp_menu]
 [scene.camp_menu.elements.arena_entry]
-template = "camp_menu_arena.png"
+template = "y_营地竞技场.png"
 confidence = 0.8
 
 # ============ 竞技场界面 ============
@@ -45,23 +43,25 @@ confidence = 0.8
 [scene.arena]
 required = ["detect"]
 [scene.arena.elements.detect]
-template = "arena_detect.png"
+template = "j_竞技场检测.png"
 confidence = 0.8
 [scene.arena.elements.challenge1]
-template = "challenge_1.png"
+template = "t_挑战1.png"
 confidence = 0.8
+click_offset = [0, 10]  # 点击中心下移 10px（实测偏上）
 [scene.arena.elements.challenge2]
-template = "challenge_2.png"
+template = "t_挑战2.png"
 confidence = 0.8
+click_offset = [0, 10]  # 同 challenge1
 [scene.arena.elements.exit_main]
-template = "arena_exit_main.png"
+template = "t_退出主界面.png"
 confidence = 0.8
 
 # ============ 竞技场结算界面 ============
 # 检测到后需点击窗口底部退出结算（自动打竞技场用）
 [scene.arena_settle]
 [scene.arena_settle.elements.settle_detect]
-template = "arena_settle.png"
+template = "j_竞技场结算.png"
 confidence = 0.8
 
 # ============ 战斗界面 ============
@@ -69,23 +69,24 @@ confidence = 0.8
 [scene.battle]
 required = ["auto", "jinang"]
 [scene.battle.elements.auto]
-template = "battle_auto.png"
+template = "z_战斗自动.png"
 confidence = 0.8
 [scene.battle.elements.jinang]
-template = "battle_jinang.png"
+template = "j_战斗锦囊.png"
 confidence = 0.8
 
 # ============ 工会界面 ============
 [scene.guild]
+# bargain 模板文件（g_工会砍价.png）暂缺，待截图后放入 templates/ 即生效
 [scene.guild.elements.bargain]
-template = "guild_bargain.png"
+template = "g_工会砍价.png"
 confidence = 0.8
 [scene.guild.elements.boss]
-template = "guild_boss.png"
+template = "g_工会boss.png"
 confidence = 0.8
 [scene.guild.elements.challenge1]
 # Boss 面板的挑战按钮（复用竞技场挑战模板）
-template = "challenge_1.png"
+template = "t_挑战1.png"
 confidence = 0.8
 
 # ============ 钓鱼小游戏界面 ============
@@ -93,36 +94,37 @@ confidence = 0.8
 [scene.fishing]
 required = ["detect"]
 [scene.fishing.elements.detect]
-template = "fishing_detect.png"
+template = "d_钓鱼检测.png"
 confidence = 0.8
 [scene.fishing.elements.fish]
 # 用大模板（含"钓鱼"文字）：小模板(17x18)会误匹配返回键(0.917)，大模板在等待上钩界面不会误匹配
-template = "territory_fish_2.png"
+# alt：按钮高亮/大字号状态（129x38，从当前截图裁剪），原模板(117x30)较扁
+template = "d_钓鱼.png"
+alt_templates = ["d_钓鱼1.png"]
 confidence = 0.8
 [scene.fishing.elements.fish_remaining]
-template = "fish_remaining.png"
-confidence = 0.8
-[scene.fishing.elements.fish_confirm]
-template = "fish_confirm.png"
+template = "d_钓鱼剩余.png"
 confidence = 0.8
 [scene.fishing.elements.fish_icon]
-# 钓鱼图标：退出结算后用于确认已回到钓鱼小游戏（比 fish_confirm 更可靠）
-template = "fish_icon.png"
+# 钓鱼图标：退出结算后用于确认已回到钓鱼小游戏
+template = "d_钓鱼图标.png"
 confidence = 0.8
 [scene.fishing.elements.fish_gain]
-template = "fish_gain.png"
+# alt：奖励弹窗大字"恭喜获得"（160x34），原模板为小字"获得"
+template = "d_钓鱼获得.png"
+alt_templates = ["d_钓鱼获得1.png"]
 confidence = 0.8
 
 # ============ 领地地图 ============
 [scene.territory]
 [scene.territory.elements.detect]
-template = "territory_detect.png"
+template = "l_领地检测.png"
 confidence = 0.85
 [scene.territory.elements.camp_entrance]
-template = "territory_camp.png"
+template = "l_领地营地.png"
 confidence = 0.8
 [scene.territory.elements.pond]
-template = "territory_pond.png"
+template = "l_领地鱼塘.png"
 confidence = 0.8
 
 # ============ 导航路径（进入目标场景需依次点击的元素序列） ============

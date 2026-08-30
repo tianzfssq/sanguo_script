@@ -7,7 +7,7 @@
 4. 按住 W 3s 松开
 5. 点击鱼塘（territory.pond / 固定坐标），等待 1s
 6. 点击钓鱼（territory.fish），等待 1s
-7. 等待 4s 进入钓鱼游戏 → 点击确定（fish_confirm）
+7. 等待 4s 进入钓鱼游戏 → 复用钓鱼按钮位置点击确定（不做图片匹配）
    → 等待获得奖励（fish_gain）出现 → 点击屏幕下方退出结算（点 1 次等 1s 再点 1 次）
 8. 循环 6~7 共 10 次
 """
@@ -34,20 +34,26 @@ def _fish_times(ctx: Context) -> int:
 
 def _click_element(
     ctx: Context, elem_key: str, wait: float = 0.0, scene_key: str = FISHING_SCENE
-) -> bool:
-    """匹配并点击指定场景中的元素，返回是否成功。"""
+) -> tuple[int, int] | None:
+    """匹配并点击指定场景中的元素，成功返回点击的屏幕绝对坐标，失败返回 None。"""
     scene = ctx.states.get_scene(scene_key)
     element = scene.elements.get(elem_key) if scene else None
     if element is None:
         ctx.logger.error(f"未配置元素: {scene_key}.{elem_key}")
-        return False
-    if not ctx.input_ctrl.click_element(element, ctx.matcher, ctx.screen):
-        ctx.logger.warn(f"未匹配到 {elem_key}，请确认当前界面可见")
-        return False
-    ctx.logger.info(f"已点击 {elem_key}")
+        return None
+    shot, (left, top) = ctx.screen.window_screen()
+    result = ctx.matcher.find(shot, element)
+    if result is None:
+        ctx.logger.warn(
+            f"未匹配到 {scene_key}.{elem_key}（模板 {element.template}），请确认当前界面可见"
+        )
+        return None
+    x, y = result.center
+    ctx.input_ctrl.click(x + left, y + top)
+    ctx.logger.info(f"已点击 {elem_key}（屏幕 {x + left},{y + top}）")
     if wait > 0:
         time.sleep(wait)
-    return True
+    return (x + left, y + top)
 
 
 def _wait_element(
@@ -65,7 +71,7 @@ def _wait_element(
         if ctx.matcher.find(shot, element):
             return True
         time.sleep(0.5)
-    ctx.logger.warn(f"等待 {elem_key} 超时（{timeout}s）")
+    ctx.logger.warn(f"等待 {elem_key}（模板 {element.template}）超时（{timeout}s）")
     return False
 
 
@@ -102,15 +108,17 @@ def _is_scene(ctx: Context, scene_key: str) -> bool:
     return ctx.matcher.find(shot, element) is not None
 
 
-def _fish_round(ctx: Context) -> bool:
-    """第 7 步：点击钓鱼后等待 4s（进入钓鱼游戏）→ 点击确定 → 等待获得奖励 → 点击屏幕下方关闭弹窗。
+def _fish_round(ctx: Context, fish_pos: tuple[int, int]) -> bool:
+    """第 7 步：点击钓鱼后等待 4s（进入钓鱼游戏）→ 复用钓鱼按钮位置点击确定
+    （确定按钮停留时间短且咬钩时机随机，不做图片匹配，直接在原位置再点一次）
+    → 等待获得奖励 → 点击屏幕下方关闭弹窗。
 
     退出结算（简单方法）：点击屏幕下方 1 次，等 1s，再点击 1 次，
     关闭可能连续弹出的 2 次结算弹窗，随后再点钓鱼。
     """
     time.sleep(3.0)  # 点击钓鱼按键后已等待 1s，再等 3s，共 4s 进入钓鱼游戏
-    if not _click_element(ctx, "fish_confirm"):
-        return False
+    ctx.input_ctrl.click(*fish_pos)
+    ctx.logger.info(f"点击确定（复用钓鱼按钮位置 {fish_pos[0]},{fish_pos[1]}）")
     if not _wait_element(ctx, "fish_gain", timeout=15):
         ctx.logger.warn("未检测到获得奖励，本轮钓鱼异常")
         return False
@@ -137,10 +145,14 @@ def _run_fishing(ctx: Context) -> None:
     _move_into_camp(ctx)
     # 3. 按住 A 4s
     ctx.logger.info("按住 A 4 秒...")
-    ctx.input_ctrl.press_key("a", MOVE_A_SECONDS)
+    ctx.input_ctrl.press_key("a", MOVE_A_SECONDS, stop_event=ctx.stop_event)
+    if ctx.stop_event.is_set():
+        return
     # 4. 按住 W 3s
     ctx.logger.info("按住 W 3 秒...")
-    ctx.input_ctrl.press_key("w", MOVE_W_SECONDS)
+    ctx.input_ctrl.press_key("w", MOVE_W_SECONDS, stop_event=ctx.stop_event)
+    if ctx.stop_event.is_set():
+        return
     # 5. 点击鱼塘（固定位置），等待 1s
     if not _click_pond(ctx):
         return
@@ -151,9 +163,10 @@ def _run_fishing(ctx: Context) -> None:
         if ctx.stop_event.is_set():
             break
         ctx.logger.info(f"第 {i} 次钓鱼...")
-        if not _click_element(ctx, "fish", wait=CLICK_SETTLE_DELAY):
+        pos = _click_element(ctx, "fish", wait=CLICK_SETTLE_DELAY)
+        if pos is None:
             break
-        if not _fish_round(ctx):
+        if not _fish_round(ctx, pos):
             break
     ctx.logger.info("钓鱼结束")
 
@@ -173,8 +186,9 @@ class FishingLoopModule(BaseModule):
             if ctx.stop_event.is_set():
                 break
             ctx.logger.info(f"第 {i} 次钓鱼...")
-            if not _click_element(ctx, "fish", wait=CLICK_SETTLE_DELAY):
+            pos = _click_element(ctx, "fish", wait=CLICK_SETTLE_DELAY)
+            if pos is None:
                 break
-            if not _fish_round(ctx):
+            if not _fish_round(ctx, pos):
                 break
         ctx.logger.info("钓鱼循环结束")

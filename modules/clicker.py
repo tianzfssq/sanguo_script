@@ -22,7 +22,7 @@ def _is_backtick(key) -> bool:
     return getattr(key, "vk", None) == 192
 
 
-@register_action("eat_clicker", "连点（eat图标）", "主界面", "定位 eat.png 后左键连点，按 ` 键退出")
+@register_action("eat_clicker", "连点（eat图标）", "主界面", "定位 c_吃.png 后左键连点，按 ` 键退出")
 class EatClickerModule(BaseModule):
     def run(self, ctx) -> None:
         scene = ctx.states.get_scene("main")

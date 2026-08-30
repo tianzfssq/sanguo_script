@@ -61,7 +61,7 @@ class BattleHelper:
                 ctx.logger.warn("战斗循环超时")
                 return False
 
-            ctx.input_ctrl.press_key(direction, self._move_duration)
+            ctx.input_ctrl.press_key(direction, self._move_duration, stop_event=ctx.stop_event)
             direction = "d" if direction == "a" else "a"
 
             now = time.time()

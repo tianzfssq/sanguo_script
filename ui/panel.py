@@ -177,7 +177,7 @@ class Panel:
         """测试工具：按文件名在 templates/ 找模板并匹配当前页面，打印位置。"""
         name = self._tpl_var.get().strip()
         if not name:
-            self._logger.warn("请输入模板文件名，如 eat.png")
+            self._logger.warn("请输入模板文件名，如 c_吃.png")
             return
         name = Path(name).name  # 只取文件名，防路径
         if not name.lower().endswith(".png"):

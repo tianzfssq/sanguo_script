@@ -25,7 +25,15 @@ def _click_challenge(ctx: Context) -> bool:
     for key in CHALLENGE_KEYS:
         element = arena.elements.get(key) if arena else None
         if element and ctx.input_ctrl.click_element(element, ctx.matcher, ctx.screen):
-            ctx.logger.info(f"点击挑战按钮 {key}")
+            # 记录实际点击位置，便于排查偏移
+            img, (left, top) = ctx.screen.window_screen()
+            r = ctx.matcher.find(img, element)
+            if r:
+                ctx.logger.info(
+                    f"点击挑战按钮 {key}：窗口内({r.center[0]},{r.center[1]}) 屏幕({r.center[0]+left},{r.center[1]+top})"
+                )
+            else:
+                ctx.logger.info(f"点击挑战按钮 {key}")
             time.sleep(1.0)  # 等待战斗界面加载
             return True
     return False

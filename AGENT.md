@@ -21,10 +21,22 @@
 - 新增踩坑经验追加到文档第 9 节「历史经验」；
 - 表格中的模板名、阈值、次数等具体数值需与 toml/代码实际值一致。
 
+## 全局规则（强制）
+
+- **停止任务必须先松开按键**：所有长按按键操作（`press_key` 且 `duration > 0`，
+  如挂机 A/D、钓鱼 A/W）必须把 `ctx.stop_event` 传入 `press_key`，停止任务时立即
+  松开按键，不允许停止后按键仍处于按下状态；`release` 必须放在 `finally` 中，
+  保证中途异常也不残留按下状态。
+- **停止任务热键 `~`**：任务运行期间按 `~`（` 键）触发 `TaskRunner.stop_current()`
+  停止当前任务（见 `orchestrator/task_runner.py`）。新增模块的循环/长按逻辑必须
+  响应 `ctx.stop_event`（及时 return/break），不得阻塞或忽略停止信号。
+
 ## 项目约定（简版）
 
 - 分层：core（窗口/截图/匹配/输入/状态）→ modules（业务）→ orchestrator → ui（Tkinter 面板）；
 - 新功能：实现 BaseModule.run() + `@register_action(key, name, category, desc)` +
   在 `modules/__init__.py` import，GUI 自动生成按钮；
 - 模板放 `templates/`（支持中文文件名），元素配置在 `config/scenes.toml`；
+- **模板命名规范**：`首字拼音首字母_中文名.png`（如 `c_吃.png`、`z_主界面营地.png`），
+  同一元素多种外观加序号后缀（`z_主界面营地1.png`）；新增模板必须遵守并同步 scenes.toml；
 - 回复与代码注释使用中文。
