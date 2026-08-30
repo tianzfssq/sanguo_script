@@ -1,0 +1,130 @@
+# 场景与界面元素定义（扩展点）
+# - 每个 [scene.xxx.elements.yyy] 定义界面上一个可识别按钮/图标
+# - template 文件名相对 templates/ 目录
+# - 模板缺失时程序会跳过该元素，不影响运行
+# - 新增元素：加一段配置 + 在 templates/ 放模板图即可
+# - 新增导航路径：在 [nav.paths] 里配置"场景.元素"序列
+
+# ============ 主界面 ============
+# 判定规则：同时找到 特惠+营地 图标，且没有竞技场二级菜单
+# 营地图标有两种外观（main_camp / main_camp_1），命中任一即算营地
+[scene.main]
+fallback = true                                # 主界面最后判定（兜底场景）
+required = ["special", "camp"]                 # 必须全部命中
+forbidden = ["camp_menu.arena_entry"]          # 命中任一则不算主界面
+
+[scene.main.elements.special]
+template = "特惠.png"
+confidence = 0.82
+
+[scene.main.elements.camp]
+template = "main_camp.png"
+alt_templates = ["main_camp_1.png"]            # 营地图标备选外观，命中任一即算营地
+confidence = 0.82
+
+[scene.main.elements.territory]
+template = "main_territory.png"
+confidence = 0.82
+
+[scene.main.elements.guild]
+template = "main_guild.png"
+confidence = 0.82
+
+[scene.main.elements.eat]
+template = "eat.png"
+confidence = 0.8
+
+# ============ 营地二级菜单（点营地后弹出的弹窗） ============
+[scene.camp_menu]
+[scene.camp_menu.elements.arena_entry]
+template = "camp_menu_arena.png"
+confidence = 0.8
+
+# ============ 竞技场界面 ============
+# required: 必须命中竞技场固定按键才算竞技场（退出按钮是各小场景通用按钮，不能作为判定特征）
+[scene.arena]
+required = ["detect"]
+[scene.arena.elements.detect]
+template = "arena_detect.png"
+confidence = 0.8
+[scene.arena.elements.challenge1]
+template = "challenge_1.png"
+confidence = 0.8
+[scene.arena.elements.challenge2]
+template = "challenge_2.png"
+confidence = 0.8
+[scene.arena.elements.exit_main]
+template = "arena_exit_main.png"
+confidence = 0.8
+
+# ============ 竞技场结算界面 ============
+# 检测到后需点击窗口底部退出结算（自动打竞技场用）
+[scene.arena_settle]
+[scene.arena_settle.elements.settle_detect]
+template = "arena_settle.png"
+confidence = 0.8
+
+# ============ 战斗界面 ============
+# 战斗指令面板特有按钮（自动/锦囊妙计），其他场景不会出现，用模板判定战斗
+[scene.battle]
+required = ["auto", "jinang"]
+[scene.battle.elements.auto]
+template = "battle_auto.png"
+confidence = 0.8
+[scene.battle.elements.jinang]
+template = "battle_jinang.png"
+confidence = 0.8
+
+# ============ 工会界面 ============
+[scene.guild]
+[scene.guild.elements.bargain]
+template = "guild_bargain.png"
+confidence = 0.8
+[scene.guild.elements.boss]
+template = "guild_boss.png"
+confidence = 0.8
+[scene.guild.elements.challenge1]
+# Boss 面板的挑战按钮（复用竞技场挑战模板）
+template = "challenge_1.png"
+confidence = 0.8
+
+# ============ 钓鱼小游戏界面 ============
+# 优先判定（放在所有场景之前）：进入钓鱼小游戏后以此场景为准
+[scene.fishing]
+required = ["detect"]
+[scene.fishing.elements.detect]
+template = "fishing_detect.png"
+confidence = 0.8
+[scene.fishing.elements.fish]
+# 用大模板（含"钓鱼"文字）：小模板(17x18)会误匹配返回键(0.917)，大模板在等待上钩界面不会误匹配
+template = "territory_fish_2.png"
+confidence = 0.8
+[scene.fishing.elements.fish_remaining]
+template = "fish_remaining.png"
+confidence = 0.8
+[scene.fishing.elements.fish_confirm]
+template = "fish_confirm.png"
+confidence = 0.8
+[scene.fishing.elements.fish_icon]
+# 钓鱼图标：退出结算后用于确认已回到钓鱼小游戏（比 fish_confirm 更可靠）
+template = "fish_icon.png"
+confidence = 0.8
+[scene.fishing.elements.fish_gain]
+template = "fish_gain.png"
+confidence = 0.8
+
+# ============ 领地地图 ============
+[scene.territory]
+[scene.territory.elements.detect]
+template = "territory_detect.png"
+confidence = 0.85
+[scene.territory.elements.camp_entrance]
+template = "territory_camp.png"
+confidence = 0.8
+[scene.territory.elements.pond]
+template = "territory_pond.png"
+confidence = 0.8
+
+# ============ 导航路径（进入目标场景需依次点击的元素序列） ============
+[nav.paths]
+arena = ["main.camp", "camp_menu.arena_entry"]

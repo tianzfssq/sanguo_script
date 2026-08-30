@@ -1,0 +1,36 @@
+# 全局参数配置
+# 修改后重启程序生效
+
+[window]
+# 微信小游戏渲染子窗口类名（由微信版本决定）
+child_class = "Intermediate D3D Window"
+
+[detect]
+# 底部黑条检测（沿用 auto_battle.py 的参数）
+sample_bottom_ratio = 0.15   # 窗口底部检测区域高度比例
+black_threshold = 40         # RGB 各通道低于此值视为黑像素
+settle_ratio = 0.88          # 黑像素占比 > 此值 = 结算画面
+downsize_ratio = 0.15        # 采样缩放比例
+
+[template]
+# 图像模板匹配
+default_confidence = 0.8     # 默认匹配置信度阈值
+scale_step = 0.05            # 多尺度匹配步长
+
+[arena]
+# 自动打竞技场
+max_rounds = 5          # 最多挑战次数（0 = 无限，直到次数用尽或手动停止）
+
+[guild]
+# 自动打工会 Boss
+rounds = 2              # Boss 战斗次数
+
+[fishing]
+# 钓鱼
+pond_pos = [200, 345]   # 鱼塘固定位置（游戏窗口内相对坐标，左上角为 0,0）
+fish_times = 10         # 钓鱼循环次数
+
+[battle]
+# 挂机战斗循环参数
+move_duration = 1.5          # 单方向按住时长（秒）
+exit_delay = 1.5             # 点击退出后等待地图加载（秒）
