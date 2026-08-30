@@ -1,0 +1,30 @@
+# AGENT.md — 大模型协作须知
+
+本项目的检测/判断逻辑文档为 **docs/判断逻辑.md**，记录所有场景判定、模板匹配、
+导航、战斗与各业务模块的判断规则及历史踩坑。
+
+## 强制要求
+
+**任何涉及以下内容的改动，必须同步更新 docs/判断逻辑.md 的对应章节：**
+
+- `config/scenes.toml`：新增/修改场景、元素、required/forbidden、alt_templates、导航路径；
+- `core/state.py`：判定顺序、命中规则、黑条回退、诊断输出；
+- `core/image_match.py` / `core/models.py`：匹配算法、阈值语义、多模板机制；
+- `config/settings.toml` 中 detect/template 相关参数；
+- `modules/navigation.py` 的 back_to_main / enter_scene 逻辑；
+- `modules/battle.py` 的战斗结束/结算判定；
+- 各业务模块（arena/guild/fishing/daily/clicker 等）中"何时判定成功/失败/重试"的分支逻辑。
+
+## 更新方式
+
+- 改哪节就更新哪节，保持文档与代码一致（过时的描述直接删改，不留"曾经"）；
+- 新增踩坑经验追加到文档第 9 节「历史经验」；
+- 表格中的模板名、阈值、次数等具体数值需与 toml/代码实际值一致。
+
+## 项目约定（简版）
+
+- 分层：core（窗口/截图/匹配/输入/状态）→ modules（业务）→ orchestrator → ui（Tkinter 面板）；
+- 新功能：实现 BaseModule.run() + `@register_action(key, name, category, desc)` +
+  在 `modules/__init__.py` import，GUI 自动生成按钮；
+- 模板放 `templates/`（支持中文文件名），元素配置在 `config/scenes.toml`；
+- 回复与代码注释使用中文。
