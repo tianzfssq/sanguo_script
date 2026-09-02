@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 from modules.base import BaseModule, register_action
 from orchestrator.context import Context
@@ -69,7 +70,66 @@ def _click_challenge(ctx: Context) -> bool:
         ctx.logger.info("检测到挑战按键，点击挑战")
         return _click_guild_element(ctx, "challenge1", wait=1.0)
     ctx.logger.warn("连续检测未找到挑战按键，无法挑战")
+    # 保存现场截图，用于定位挑战按键模板失配原因
+    try:
+        img, _ = ctx.screen.window_screen()
+        name = f"debug_挑战未找到_{time.strftime('%H%M%S')}.png"
+        img.save(Path(__file__).resolve().parent.parent / name)
+        ctx.logger.info(f"已保存现场截图: {name}")
+    except Exception as exc:
+        ctx.logger.warn(f"现场截图保存失败: {exc}")
     return False
+
+
+def _enable_auto_battle(ctx: Context) -> None:
+    """进入 Boss 战斗后：若「自动」未开启（z_自动未开启.png 可见）则点击开启。
+
+    战斗界面加载需要时间，最多检测 3 次（间隔 2s）：
+    - 检测到未开启态 → 点击，并在点击后用 z_自动开启.png 复检是否点中，
+      未点中（偶发丢点击）则重试，最多 2 次；
+    - 检测到已开启态（z_自动开启.png）→ 无需处理；
+    - 始终未检出 → 仅记录日志，不影响后续流程。
+    """
+    battle = ctx.states.get_scene("battle")
+    auto_off = battle.elements.get("auto_off") if battle else None
+    auto_on = battle.elements.get("auto_on") if battle else None
+    if auto_off is None:
+        return
+
+    def _auto_on_visible() -> bool:
+        if auto_on is None:
+            return False
+        shot, _ = ctx.screen.window_screen()
+        return ctx.matcher.find(shot, auto_on) is not None
+
+    for attempt in range(1, 4):
+        if ctx.stop_event.is_set():
+            return
+        shot, _ = ctx.screen.window_screen()
+        if ctx.matcher.find(shot, auto_off) is not None:
+            if ctx.input_ctrl.click_element(auto_off, ctx.matcher, ctx.screen):
+                ctx.logger.info("检测到「自动」未开启，已点击开启自动战斗")
+                time.sleep(1)  # 等待图标状态切换
+                if _auto_on_visible():
+                    ctx.logger.info("复检：「自动」已点亮，开启成功")
+                else:
+                    # 偶发丢点击：再补一次（最多重试 2 次）
+                    for retry in range(1, 3):
+                        if ctx.stop_event.is_set():
+                            return
+                        ctx.logger.warn(f"复检未点亮，第 {retry} 次补点「自动」")
+                        if ctx.input_ctrl.click_element(auto_off, ctx.matcher, ctx.screen):
+                            time.sleep(1)
+                            if _auto_on_visible():
+                                ctx.logger.info("补点后「自动」已点亮")
+                                return
+                    ctx.logger.warn("多次点击后「自动」仍未点亮，继续战斗流程")
+            return
+        if _auto_on_visible():
+            ctx.logger.info("「自动」已开启，无需处理")
+            return
+        time.sleep(2)
+    ctx.logger.info("未检测到「自动」状态图标，跳过开启自动")
 
 
 def _boss_round(ctx: Context, index: int, need_open: bool) -> bool:
@@ -88,6 +148,8 @@ def _boss_round(ctx: Context, index: int, need_open: bool) -> bool:
         ctx.logger.warn("点击挑战后仍停留在工会界面，可能挑战未触发")
         return False
     ctx.logger.info("已进入 Boss 战斗，等待战斗结束...")
+    # 战斗界面就绪后：若「自动」未开启则点击开启
+    _enable_auto_battle(ctx)
     # 等待战斗结束回到工会界面（期间检测到结算界面自动点击底部退出）
     if not ctx.battle.wait_battle_end_back("guild", exit_scenes=SETTLE_SCENES):
         ctx.logger.warn("等待 Boss 战斗结束超时")

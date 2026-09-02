@@ -43,7 +43,9 @@ confidence = 0.8
 [scene.arena]
 required = ["detect"]
 [scene.arena.elements.detect]
+# alt：页签选中高亮态（亮黄底，66x24，从失败截图裁剪），原模板为未选中暗底态
 template = "j_竞技场检测.png"
+alt_templates = ["j_竞技场检测1.png"]
 confidence = 0.8
 [scene.arena.elements.challenge1]
 template = "t_挑战1.png"
@@ -74,6 +76,15 @@ confidence = 0.8
 [scene.battle.elements.jinang]
 template = "j_战斗锦囊.png"
 confidence = 0.8
+# 以下两个元素不参与场景判定（不在 required），供工会 Boss 战斗开启自动用
+[scene.battle.elements.auto_off]
+# 「自动」未开启态（暗底文字），检测到则点击开启
+template = "z_自动未开启.png"
+confidence = 0.8
+[scene.battle.elements.auto_on]
+# 「自动」已开启态（亮底文字），用于跳过无谓检测
+template = "z_自动开启.png"
+confidence = 0.8
 
 # ============ 工会界面 ============
 [scene.guild]
@@ -82,11 +93,16 @@ confidence = 0.8
 template = "g_工会砍价.png"
 confidence = 0.8
 [scene.guild.elements.boss]
+# alt：公会活动横幅"公会BOSS"文字（74x27，从失败截图裁剪，只截文字不带背景），
+# 原模板为带背景小碎片，界面改版后仅 0.726 导致进工会判定失败
 template = "g_工会boss.png"
+alt_templates = ["g_工会boss1.png"]
 confidence = 0.8
 [scene.guild.elements.challenge1]
-# Boss 面板的挑战按钮（复用竞技场挑战模板）
+# Boss 面板的挑战按钮：主模板复用竞技场挑战（含怪物图标+次数），但工会 Boss 面板按钮为
+# 纯"挑战"文字（37x20，从现场截图裁剪），故增加 alt；公会大厅页实测 0.591 无误匹配
 template = "t_挑战1.png"
+alt_templates = ["g_挑战.png"]
 confidence = 0.8
 
 # ============ 钓鱼小游戏界面 ============
