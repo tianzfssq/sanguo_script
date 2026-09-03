@@ -21,6 +21,10 @@ scale_step = 0.05            # 多尺度匹配步长
 # 自动打竞技场
 max_rounds = 5          # 最多挑战次数（0 = 无限，直到次数用尽或手动停止）
 
+[qunxiong]
+# 自动打群雄竞技
+max_rounds = 5          # 最多挑战次数（0 = 无限，直到次数用尽或手动停止）
+
 [guild]
 # 自动打工会 Boss
 rounds = 2              # Boss 战斗次数

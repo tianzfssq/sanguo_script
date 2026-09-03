@@ -28,11 +28,14 @@ class InputController:
 
         按下后按住 hold 秒再松开：立即按下松开（pyautogui.click）会被
         Chromium WebView 小游戏忽略，点击不生效。
+        mouseUp 放在 finally 中：按住期间被中断也不会残留按下状态。
         """
         pyautogui.moveTo(x, y)
         pyautogui.mouseDown(x, y)
-        time.sleep(hold)
-        pyautogui.mouseUp(x, y)
+        try:
+            time.sleep(hold)
+        finally:
+            pyautogui.mouseUp(x, y)
 
     def click_element(self, element, matcher, screen) -> bool:
         """在游戏窗口内匹配元素并点击其中心（含偏移），未命中返回 False。"""

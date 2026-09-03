@@ -13,4 +13,5 @@ from . import daily  # noqa: F401
 from . import fishing  # noqa: F401
 from . import guild  # noqa: F401
 from . import navigation  # noqa: F401
+from . import qunxiong  # noqa: F401
 from . import smoke  # noqa: F401

@@ -58,6 +58,19 @@ click_offset = [0, 10]  # 同 challenge1
 [scene.arena.elements.exit_main]
 template = "t_退出主界面.png"
 confidence = 0.8
+# 以下两个元素供自动打群雄竞技使用，不参与 arena 场景判定
+[scene.arena.elements.qunxiong_tab]
+# 「群雄逐鹿」页签（未选中暗底态）：群雄竞技玩法切换入口，点击后等 2s
+template = "j_群雄竞技.png"
+confidence = 0.8
+[scene.arena.elements.challenge_qx]
+# 群雄逐鹿玩法按键为"图标+次数+匹配"（不是"挑战"），模板只截"匹配"文字
+template = "t_群雄竞技_匹配.png"
+confidence = 0.8
+[scene.arena.elements.opponent_challenge]
+# "选择对手"弹窗内的"挑战"按键（同屏 3 个，find_all 取全部后点最靠下的）
+template = "t_群雄竞技_挑战.png"
+confidence = 0.8
 
 # ============ 竞技场结算界面 ============
 # 检测到后需点击窗口底部退出结算（自动打竞技场用）

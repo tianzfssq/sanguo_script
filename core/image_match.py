@@ -78,6 +78,47 @@ class ImageMatcher:
             return None
         return MatchResult(element, best[1], best[0])
 
+    def find_all(self, screen: Image, element: Element) -> list[MatchResult]:
+        """在截图中查找元素的全部命中位置（按 y 升序）。
+
+        用于同屏出现多个相同按钮的场景（如群雄竞技选对手弹窗的多个"挑战"）：
+        多尺度匹配取所有 >= 阈值的位置，邻近去重（中心点 10px 内视为同一处），
+        同一处保留最高得分。
+        """
+        if not element.enabled:
+            return []
+        img = np.array(screen.convert("L"))
+
+        hits: list[tuple[float, tuple]] = []  # (score, rect)
+        for name in self._element_template_names(element):
+            tpl = self._load(name)
+            if tpl is None:
+                continue
+            scale = element.scale_min
+            while scale <= element.scale_max + 1e-6:
+                ts = cv2.resize(tpl, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+                if ts.shape[0] <= img.shape[0] and ts.shape[1] <= img.shape[1]:
+                    res = cv2.matchTemplate(img, ts, cv2.TM_CCOEFF_NORMED)
+                    ys, xs = np.where(res >= element.confidence)
+                    h, w = ts.shape
+                    for y, x in zip(ys, xs):
+                        hits.append(
+                            (float(res[y, x]), (int(x), int(y), int(x + w), int(y + h)))
+                        )
+                scale += self._scale_step
+
+        # 邻近去重：中心点 10px 内视为同一命中，保留得分最高者
+        picked: list[tuple[float, tuple]] = []
+        for score, rect in sorted(hits, reverse=True):
+            cx, cy = (rect[0] + rect[2]) // 2, (rect[1] + rect[3]) // 2
+            if all(
+                abs(cx - (p[1][0] + p[1][2]) // 2) > 10 or abs(cy - (p[1][1] + p[1][3]) // 2) > 10
+                for p in picked
+            ):
+                picked.append((score, rect))
+        picked.sort(key=lambda p: p[1][1])  # 按 y 升序
+        return [MatchResult(element, rect, score) for score, rect in picked]
+
     def find_any(self, screen: Image, elements: list[Element]) -> MatchResult | None:
         """在多个元素中找置信度最高的匹配。"""
         best: MatchResult | None = None
